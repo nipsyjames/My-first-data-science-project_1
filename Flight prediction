@@ -1,0 +1,82 @@
+import pandas as pd
+
+data = pd.read_csv('C:\\Users\\USER\\Desktop\\ML\\flights.csv')
+labels={'TAIL_NUMBER', 'DEPARTURE_TIME', 'TAXI_OUT', 'WHEELS_OFF', 'SCHEDULED_TIME', 'ELAPSED_TIME', 'AIR_TIME', 'WHEELS_ON', 'TAXI_IN', 'ARRIVAL_TIME', 'DIVERTED', 'CANCELLATION_REASON', 'AIR_SYSTEM_DELAY', 'SECURITY_DELAY', 'AIRLINE_DELAY', 'LATE_AIRCRAFT_DELAY', 'WEATHER_DELAY'}
+data = data.drop(labels, axis=1)
+data.head(5)
+
+
+import datetime
+
+# schedule departure
+data['SCHEDULED_DEPARTURE'] = data['SCHEDULED_DEPARTURE'].apply(str)
+
+
+SCHEDULED_DEPARTURE = []
+
+for i in data.SCHEDULED_DEPARTURE:
+   SCHEDULED_DEPARTURE.append(datetime.datetime.strptime(i.zfill(4), '%H%M').time())
+
+data['SCHEDULED_DEPARTURE_1'] = SCHEDULED_DEPARTURE
+
+data['scheduled_departure_time'] = data['YEAR'].map(str) + ':' + data['MONTH'].map(str) + ':' + data['DAY'].map(str) + ':' + data['SCHEDULED_DEPARTURE_1'].map(str)
+data['scheduled_departure_time'].head(5)
+
+
+import datetime
+# schedule arrival
+
+data['SCHEDULED_ARRIVAL'] = data['SCHEDULED_ARRIVAL'].apply(str)
+SCHEDULED_ARRIVAL = []
+
+for j in data.SCHEDULED_ARRIVAL:
+    SCHEDULED_ARRIVAL.append(datetime.datetime.strptime(i.zfill(4), '%H%M').time())
+
+data['SCHEDULED_ARRIVAL_1'] = SCHEDULED_ARRIVAL
+
+data['scheduled_arrival_time'] = data['YEAR'].map(str) + ':' + data['MONTH'].map(str) + ':' + data['DAY'].map(str) + ':' + data['SCHEDULED_ARRIVAL_1'].map(str)
+data['scheduled_arrival_time'].head(5)
+
+
+
+data['scheduled_departure_time'] = pd.to_datetime(data['scheduled_departure_time'], format='%Y:%m:%d:%H:%M:%S')
+
+#Converting scheduled arrival to datetime
+data['scheduled_arrival_time'] = pd.to_datetime(data['scheduled_arrival_time'], format='%Y:%m:%d:%H:%M:%S')
+#total_time = data['scheduled_departure_time']+ data['scheduled_arrival_time']
+data['Total time'] = data['scheduled_arrival_time']-data['scheduled_departure_time']
+
+data['Total delay'] = data['DEPARTURE_DELAY'] + data['ARRIVAL_DELAY']
+data['Total delay'].head(5)
+
+
+
+
+
+
+data = data.drop(labels={'YEAR', 'MONTH', 'DAY', 'SCHEDULED_DEPARTURE', 'SCHEDULED_ARRIVAL', 'DEPARTURE_DELAY', 'ARRIVAL_DELAY', 'SCHEDULED_DEPARTURE_1', 'SCHEDULED_ARRIVAL_1'}, axis=1)
+
+#COnverting total time into minutes
+total_time_mins = []
+for i in data['Total time']:
+    total_time_mins.append(i.seconds/60)
+
+data['Total time in minutes'] = total_time_mins
+data['Total time in minutes'].head(5)
+
+
+
+
+import numpy as np
+#Removing rows with nan values in total delay(Cancelled flights)
+data = data[pd.notnull(data['Total delay'])]
+
+#Converting data into int(Not necessary)
+data['Total time'] = data['Total time in minutes'].astype(int)
+data['Total delay'] = data['Total delay'].astype(int)
+
+df = data.iloc[:5000, :]
+data['Total time taken'] = data['Total time']+data['Total delay']
+data['Percentage'] = (data['Total time']/data['Total time taken'])*100
+
+data['Percentage'].head(5)
